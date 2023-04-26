@@ -1,44 +1,40 @@
-//Bibliotecas:
-#include <Arduino.h>
+// NOME: Victor Sidnei Cotta
+
+
+// ============================ DECLARAÇÃO DE BIBLIOTECAS ==================================================
+
+//#include <RotaryEncoder.h>
 #include <math.h>
-#include <string.h>
 
-//Definição dos pinos:
-#define CLK              2
-#define SDA              3
-#define IN1              5
-#define IN2              6
-#define ENA              9
 
-//Resolução do encoder:
-#define resolution       12
+#define    CLK              2                     //Conexão A do encoder
+#define    SDA              3                     //Conexão B do encoder
+#define    ENA              9                     //Saída PWM para controle de velocidade do motor
+#define    IN1              5                     //Controle IN1 do driver L298N
+#define    IN2              6                     //Controle IN2 do driver L298N
 
-//Razão de redução:
-#define reduction_ratio  1/73
+//#define    max_rpm          100                   //Rotação máxima, em RPM
+#define    resolution       12                    //Resolução do encoder
+#define    reduction        73                    //Redução
+#define    raio             30                    //Raio da roda em milímetros
 
-//Raio da roda (em milímetros):
-#define raio             30
 
-//Definição de variáveis:
-bool active = false;
-int value = 0;
-long pulses = 0, last_pulses = 0;
-unsigned long tempo_0 = 1000, tempo_ensaio = 1000, pined_time = 0, i = 0, t_ref = 0, ts = 50;
+int valor_pwm;
 float v = 0, v_ang = 0, pos[2], time[2];
+long pulses = 0, last_pulses = 0;
+unsigned long tempo_0 = 1000, tempo_ensaio = 10000, pined_time = 0, i = 0, t_ref = 0, ts = 50;
 
 
-//Inicializações:
 void setup() 
 {
-  Serial.begin(115200);
-
   pinMode(2, INPUT);
   pinMode(3, INPUT);
+  pinMode(ENA, OUTPUT);
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
-  pinMode(ENA, OUTPUT);
 
-  attachInterrupt(digitalPinToInterrupt(CLK), count_pulses, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(CLK), count_pulses, RISING);
+  Serial.begin(115200);
 }
 
 void count_pulses()
@@ -71,7 +67,7 @@ void update_velocity()
     case 2:
       if(pulses != last_pulses)
       {
-        pos[0] = ((float)pulses*2*M_PI*reduction_ratio/resolution);
+        pos[0] = ((float)pulses*2*M_PI/(resolution*reduction));
         time[0] = ((float)millis()/1e3);
         last_pulses = pulses;
         i++;
@@ -87,58 +83,50 @@ void update_velocity()
     case 4:
       if(pulses != last_pulses)
       {
-        pos[1] = ((float)pulses*2*M_PI*reduction_ratio/resolution);
+        pos[1] = ((float)pulses*2*M_PI/(resolution*reduction));
         time[1] = ((float)millis()/1e3);
         v_ang = ((float)(pos[1]-pos[0])/(time[1]-time[0]));
         v = v_ang*raio;
         i++;
       }
     break;
-  }  
+  }
 }
 
-void loop() 
+void motor_control() 
 {
-  update_velocity();  
-  if(active)
+  if((millis() - tempo_0) <= tempo_ensaio)
   {
-    //Retorna a velocidade atual:
-    Serial.println(v);
-  }
+    valor_pwm = 255;
 
-  //Obtenção do comando de controle:
-  if(Serial.available())
-  {
-    value = atoi(Serial.readString().c_str());
-    Serial.flush();
-    if(value == 48)
-    {
-      active = !active;
-      value = 0;
-    }else
-    {
-      value = round((value-150)*2.55);
-    }    
-  } 
-
-  //Envio do sinal para o motor:
-  if(value > 0)
-  {
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, HIGH);
-    analogWrite(ENA, abs(value));
-  }
-  if(value < 0)
+    analogWrite(ENA, valor_pwm);
+
+    Serial.print("Pulsos: ");
+    Serial.print(pulses);
+
+    update_velocity();
+
+    Serial.print(" | ");
+    Serial.print("Velocidade angular (rad/s): ");
+    Serial.print(v_ang);
+   
+    Serial.print(" | ");
+    Serial.print("Velocidade linear (mm/s): ");
+    Serial.println(v);
+
+    Serial.print("\n");
+  }else
   {
-    digitalWrite(IN1, HIGH);
-    digitalWrite(IN2, LOW);
-    analogWrite(ENA, abs(value));
-  }
-  if(value == 0)
-  {
-    digitalWrite(IN1, HIGH);
-    digitalWrite(IN2, HIGH);
-    analogWrite(ENA, 255);
-    v = 0;
+    valor_pwm = 0;
+  
+    analogWrite(ENA, valor_pwm);
   }
 }
+  
+void loop()
+{
+  motor_control();
+}
+
