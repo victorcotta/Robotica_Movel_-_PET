@@ -15,7 +15,7 @@
 
 //#define    max_rpm          100                   //Rotação máxima, em RPM
 #define    resolution       12                    //Resolução do encoder
-#define    reduction        73                    //Redução
+#define    reduction        298                   //Redução
 #define    raio             30                    //Raio da roda em milímetros
 
 
