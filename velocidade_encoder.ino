@@ -33,7 +33,7 @@ void setup()
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
 
-  attachInterrupt(digitalPinToInterrupt(CLK), count_pulses, RISING);
+  attachInterrupt(digitalPinToInterrupt(CLK), count_pulses, CHANGE);
   Serial.begin(115200);
 }
 
@@ -67,7 +67,7 @@ void update_velocity()
     case 2:
       if(pulses != last_pulses)
       {
-        pos[0] = ((float)pulses*2*M_PI/(resolution*reduction));
+        pos[0] = ((float)pulses*2*M_PI/((resolution/2.0)*reduction));
         time[0] = ((float)millis()/1e3);
         last_pulses = pulses;
         i++;
@@ -83,7 +83,7 @@ void update_velocity()
     case 4:
       if(pulses != last_pulses)
       {
-        pos[1] = ((float)pulses*2*M_PI/(resolution*reduction));
+        pos[1] = ((float)pulses*2*M_PI/((resolution/2.0)*reduction));
         time[1] = ((float)millis()/1e3);
         v_ang = ((float)(pos[1]-pos[0])/(time[1]-time[0]));
         v = v_ang*raio;
