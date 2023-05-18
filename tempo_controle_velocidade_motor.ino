@@ -17,7 +17,7 @@
 volatile unsigned long pulses = 0;
 unsigned long tempo = 0, tempo_ensaio = 1000, t, t_0 = 0, t_1 = 0;
 float v = 0, v_ang = 0, v_ref = 0;
-int pwm = 0, i, j;
+int pwm = 0, i;
 
 
 void setup()
