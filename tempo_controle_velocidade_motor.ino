@@ -1,5 +1,6 @@
+//Nome: Victor Sidnei Cotta
+
 #include <math.h>
-//#include <time.h>
 
 
 #define    CLK              2                     //Conexão A do encoder
